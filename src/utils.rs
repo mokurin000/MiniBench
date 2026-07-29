@@ -30,14 +30,13 @@ const CHUNK_SIZE: usize = 16 * 1024; // 16 KiB
 ///
 /// Returns the amount of data processed during the period in MiB.
 pub fn sha256_workload(dur: Duration) -> usize {
-    let start_instant = Instant::now();
-
     let mut payload = [0_u8; CHUNK_SIZE];
-    SystemRng::default().fill_bytes(&mut payload);
+    SystemRng.fill_bytes(&mut payload);
 
     let calc_times = 0x100000 / CHUNK_SIZE;
-
     let mut mib_count = 0;
+
+    let start_instant = Instant::now();
     loop {
         if start_instant.elapsed() >= dur {
             break mib_count;
@@ -47,6 +46,7 @@ pub fn sha256_workload(dur: Duration) -> usize {
         for _ in 0..calc_times {
             hasher.update(&payload);
         }
+        let _ = std::hint::black_box(hasher.finalize());
 
         mib_count += 1;
     }

@@ -73,7 +73,6 @@ impl Component for MainModel {
                 text: "Multi-Thread",
             },
             textbox: TextBox = (&window) => {
-                text: "Waiting for further command...\n",
                 readonly: true,
             },
             progress: Progress = (&window) => {
