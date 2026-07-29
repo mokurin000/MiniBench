@@ -4,14 +4,8 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 use compio_log::info;
-#[cfg(any(
-        target_os = "windows",
-        target_os = "linux",
-        target_os = "android",
-        // macos: not available
-    ))]
-use gdt_cpus::pin_thread_to_core;
-use gdt_cpus::{CpuInfo, Lp};
+
+use gdt_cpus::{CpuInfo, Lp, pin_thread_to_core};
 use sha2::Digest;
 
 pub static LOGICAL_CORES: LazyLock<Vec<Lp>> =
