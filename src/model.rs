@@ -8,8 +8,6 @@ use crate::Result;
 pub struct MainModel {
     /// The main application window.
     window: Child<Window>,
-    /// label
-    label: Child<Label>,
 }
 
 pub enum MainMessage {
@@ -41,14 +39,11 @@ impl Component for MainModel {
                 #[cfg(all(windows, feature = "winui"))]
                 backdrop: Backdrop::Mica,
             },
-            label: Label = (&window) => {
-                text: "Text Label",
-            },
         }
 
         window.show()?;
 
-        Ok(Self { window, label })
+        Ok(Self { window })
     }
 
     async fn start(&mut self, sender: &ComponentSender<Self>) -> ! {
@@ -90,22 +85,6 @@ impl Component for MainModel {
     fn render(&mut self, _sender: &ComponentSender<Self>) -> Result<()> {
         let csize = self.window.client_size()?;
 
-        let mut layout = layout! {
-            Grid::from_str("1*,2*,1*,2*,1*", "1*")?,
-            self.label => {
-                row: 0,
-                column: 2,
-                halign: HAlign::Center,
-                valign: VAlign::Center,
-            },
-        };
-        let mut layout = layout! {
-            StackPanel::new(Orient::Vertical),
-            layout => {
-                halign: HAlign::Center,
-            },
-        };
-        layout.set_size(csize)?;
         Ok(())
     }
 

@@ -22,15 +22,15 @@
 # -keep, includedescriptorclasses class rs.compio.winio.ClickableSpan { *; }
 
 # TabView
--keep, includedescriptorclasses class rs.compio.winio.TabViewAdapter { *; }
--keep, includedescriptorclasses class com.google.android.material.tabs.** { *; }
--keep, includedescriptorclasses class androidx.viewpager2.widget.** { *; }
+# -keep, includedescriptorclasses class rs.compio.winio.TabViewAdapter { *; }
+# -keep, includedescriptorclasses class com.google.android.material.tabs.** { *; }
+# -keep, includedescriptorclasses class androidx.viewpager2.widget.** { *; }
 
 # WebView
 # -keep, includedescriptorclasses class rs.compio.winio.WebViewClient { *; }
 
 # Progress
-# -keep, includedescriptorclasses class com.google.android.material.progressindicator.** { *; }
+-keep, includedescriptorclasses class com.google.android.material.progressindicator.** { *; }
 
 # Slider
 # -keep, includedescriptorclasses class com.google.android.material.slider.** { *; }
