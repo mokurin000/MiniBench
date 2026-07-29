@@ -1,4 +1,5 @@
 //! Root module of the app.
+#![feature(random)]
 
 pub mod model;
 pub mod utils;

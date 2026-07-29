@@ -1,8 +1,13 @@
 //! Main GUI component for the QR code generator.
 
+use std::fmt::{self, Write};
+use std::time::Duration;
+
+use compio_log::warn;
 use winio::prelude::*;
 
 use crate::Result;
+use crate::utils::{pin_to_best_core, sha256_workload};
 
 /// Root component of the application UI.
 pub struct MainModel {
@@ -10,6 +15,7 @@ pub struct MainModel {
     window: Child<Window>,
     singlecore: Child<Button>,
     multicore: Child<Button>,
+    textbox: Child<TextBox>,
 }
 
 pub enum MainMessage {
@@ -21,10 +27,12 @@ pub enum MainMessage {
     ThemeChanged,
     /// Close main window
     Close,
-    /// Single-core test
-    StartSingleCore,
-    /// Multi-core test
-    StartMultiCore,
+    /// Start single-core test
+    SingleStart,
+    /// Complete single-core test
+    SingleComplete { mibs: usize, secs: usize },
+    /// Multi-cores test
+    MultiStart,
 }
 
 impl Component for MainModel {
@@ -51,6 +59,10 @@ impl Component for MainModel {
             multicore: Button = (&window) => {
                 text: "Multi-Thread",
             },
+            textbox: TextBox = (&window) => {
+                text: "Waiting for further command...\n",
+                readonly: true,
+            }
         }
 
         window.show()?;
@@ -59,6 +71,7 @@ impl Component for MainModel {
             window,
             singlecore,
             multicore,
+            textbox,
         })
     }
 
@@ -72,10 +85,10 @@ impl Component for MainModel {
                 WindowEvent::ThemeChanged => MainMessage::ThemeChanged,
             },
             self.singlecore => {
-                ButtonEvent::Click => MainMessage::StartSingleCore,
+                ButtonEvent::Click => MainMessage::SingleStart,
             },
             self.multicore => {
-                ButtonEvent::Click => MainMessage::StartMultiCore,
+                ButtonEvent::Click => MainMessage::MultiStart,
             }
         }
     }
@@ -101,8 +114,41 @@ impl Component for MainModel {
                 // need not to call `render`
                 Ok(false)
             }
-            MainMessage::StartSingleCore => Ok(false),
-            MainMessage::StartMultiCore => Ok(false),
+            MainMessage::SingleStart => {
+                self.singlecore.disable()?;
+                self.multicore.disable()?;
+
+                compio::runtime::spawn_blocking({
+                    let sender = sender.clone();
+
+                    move || {
+                        if let Err(e) = pin_to_best_core() {
+                            warn!("Failed to pin thread affinity: {e}");
+                        }
+
+                        let secs = 10;
+                        let mibs = sha256_workload(Duration::from_secs(secs as u64));
+
+                        sender.post(MainMessage::SingleComplete { mibs, secs });
+                    }
+                })
+                .detach();
+
+                Ok(false)
+            }
+            MainMessage::SingleComplete { mibs, secs } => {
+                self.singlecore.enable()?;
+                self.multicore.enable()?;
+
+                let speed = mibs as f64 / secs as f64;
+                self.append_message(format_args!("Single-Thread: {speed:.02} MiB/s"))?;
+
+                Ok(true)
+            }
+            MainMessage::MultiStart => {
+                self.append_message(format_args!("Multi-Thread unsupported yet."))?;
+                Ok(false)
+            }
         }
     }
 
@@ -123,6 +169,10 @@ impl Component for MainModel {
         let mut layout = layout! {
             StackPanel::new(Orient::Vertical),
             buttons,
+            self.textbox => {
+                grow: true,
+                margin: Margin::new_all_same(10.),
+            },
         };
 
         layout.set_size(csize)?;
@@ -131,5 +181,16 @@ impl Component for MainModel {
 
     fn render_children(&mut self) -> Result<()> {
         Ok(self.window.render()?)
+    }
+}
+
+impl MainModel {
+    fn append_message(&mut self, args: fmt::Arguments) -> Result<()> {
+        let mut text = self.textbox.text()?;
+        _ = text.write_fmt(args);
+        _ = text.write_char('\n');
+        self.textbox.set_text(text)?;
+
+        Ok(())
     }
 }
