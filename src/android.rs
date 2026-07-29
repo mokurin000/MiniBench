@@ -1,5 +1,6 @@
 //! Android entry point for the QR code generator app.
 
+use tracing_subscriber::prelude::*;
 use winio::prelude::*;
 
 use crate::model::MainModel;
@@ -10,6 +11,16 @@ fn android_main(app: AndroidApp) {
     unsafe {
         std::env::set_var("RUST_BACKTRACE", "1");
     }
+
+    tracing_subscriber::registry()
+        .with(tracing_android_trace::AndroidTraceLayer::new())
+        .with(
+            tracing_subscriber::fmt::layer()
+                .with_ansi(false)
+                .with_filter(LevelFilter::INFO),
+        )
+        .try_init()
+        .ok();
 
     let app = App::builder()
         .android_app(app)
