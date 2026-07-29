@@ -13,6 +13,7 @@ use crate::utils::{LOGICAL_CORES, pin_to_best_core, pin_to_core, sha256_workload
 pub struct MainModel {
     /// The main application window.
     window: Child<Window>,
+    label: Child<Label>,
     singlecore: Child<Button>,
     multicore: Child<Button>,
     textbox: Child<TextBox>,
@@ -66,25 +67,32 @@ impl Component for MainModel {
                 #[cfg(all(windows, feature = "winui"))]
                 backdrop: Backdrop::Mica,
             },
+
+            label: Label = (&window) => {
+                text: "SHA-256",
+            },
             singlecore: Button = (&window) => {
                 text: "Single-Thread",
             },
             multicore: Button = (&window) => {
                 text: "Multi-Thread",
             },
-            textbox: TextBox = (&window) => {
-                readonly: true,
-            },
+
             progress: Progress = (&window) => {
                 minimum: 0,
                 maximum: 100,
-            }
+            },
+            textbox: TextBox = (&window) => {
+                readonly: true,
+            },
+
         }
 
         window.show()?;
 
         Ok(Self {
             window,
+            label,
             singlecore,
             multicore,
             textbox,
@@ -237,6 +245,9 @@ impl Component for MainModel {
         };
         let mut layout = layout! {
             StackPanel::new(Orient::Vertical),
+            self.label => {
+                halign: HAlign::Center,
+            },
             buttons,
             self.progress => {
                 margin: Margin::new_all_same(5.),
