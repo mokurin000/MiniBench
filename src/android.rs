@@ -1,5 +1,6 @@
-//! Android entry point for the QR code generator app.
+//! Android entry point for the app.
 
+use compio_log::metadata::LevelFilter;
 use tracing_subscriber::prelude::*;
 use winio::prelude::*;
 
