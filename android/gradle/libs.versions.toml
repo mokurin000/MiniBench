@@ -5,7 +5,7 @@ gamesActivity = "4.4.2"
 appcompat = "1.7.1"
 material = "1.14.0"
 
-# viewpager2 = "1.1.0"
+viewpager2 = "1.1.0"
 # media3Ui = "1.10.1"
 
 [libraries]
@@ -20,7 +20,7 @@ winio = { module = "compio:winio", version = "latest.release" }
 # rustls-platform-verifier = { module = "rustls:rustls-platform-verifier", version = "latest.release" }
 
 # Uncomment to enable TabView support.
-# viewpager2 = { group = "androidx.viewpager2", name = "viewpager2", version.ref = "viewpager2" }
+viewpager2 = { group = "androidx.viewpager2", name = "viewpager2", version.ref = "viewpager2" }
 
 # Uncomment to enable media playback support.
 # media3-ui = { module = "androidx.media3:media3-ui", version.ref = "media3Ui" }
