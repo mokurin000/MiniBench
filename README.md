@@ -11,7 +11,4 @@ A lightweight cross-platform benchmarking tool for phones and computers, featuri
 | Qt           | Qt 5.15+ / Qt 6.0+ |
 | GTK          | GTK 4.14+          |
 | macOS        | 11.0+ (AppKit)     |
-| iOS          | 13.0+ (UIKit)      |
 | Mac Catalyst | 13.1+              |
-
-The iOS pre-release build is not included though.

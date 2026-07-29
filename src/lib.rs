@@ -1,6 +1,7 @@
 //! Root module of the app.
 
 pub mod model;
+pub mod utils;
 
 /// Shorthand for `Result<T, color_eyre::Report>`.
 pub type Result<T> = std::result::Result<T, color_eyre::Report>;
