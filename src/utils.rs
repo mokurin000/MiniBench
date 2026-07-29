@@ -2,12 +2,13 @@ use std::sync::LazyLock;
 use std::thread;
 
 use compio_log::info;
-use gdt_cpus::{AffinityMask, CpuInfo, set_thread_affinity, set_thread_priority};
+use gdt_cpus::{AffinityMask, CpuInfo, Lp, set_thread_affinity, set_thread_priority};
 
+static LOGICAL_CORES: LazyLock<Vec<Lp>> =
+    LazyLock::new(|| CpuInfo::detect().expect("Failed to detect CPU info").lps);
 static BEST_CORE: LazyLock<AffinityMask> = LazyLock::new(|| {
-    let lps = CpuInfo::detect().expect("Failed to detect CPU info").lps;
-    let lp = lps
-        .into_iter()
+    let lp = LOGICAL_CORES
+        .iter()
         .max_by_key(|lp| lp.perf_hint)
         .expect("Empty logicial processors");
     AffinityMask::from_cores(&[lp.core as _])

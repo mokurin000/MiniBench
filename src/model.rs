@@ -8,6 +8,8 @@ use crate::Result;
 pub struct MainModel {
     /// The main application window.
     window: Child<Window>,
+    singlecore: Child<Button>,
+    multicore: Child<Button>,
 }
 
 pub enum MainMessage {
@@ -19,6 +21,10 @@ pub enum MainMessage {
     ThemeChanged,
     /// Close main window
     Close,
+    /// Single-core test
+    StartSingleCore,
+    /// Multi-core test
+    StartMultiCore,
 }
 
 impl Component for MainModel {
@@ -34,16 +40,26 @@ impl Component for MainModel {
         init! {
             window: Window = (()) => {
                 text: "MiniBench",
-                size: Size::new(300.0, 100.0),
+                size: Size::new(300.0, 500.0),
 
                 #[cfg(all(windows, feature = "winui"))]
                 backdrop: Backdrop::Mica,
+            },
+            singlecore: Button = (&window) => {
+                text: "Single-Thread",
+            },
+            multicore: Button = (&window) => {
+                text: "Multi-Thread",
             },
         }
 
         window.show()?;
 
-        Ok(Self { window })
+        Ok(Self {
+            window,
+            singlecore,
+            multicore,
+        })
     }
 
     async fn start(&mut self, sender: &ComponentSender<Self>) -> ! {
@@ -55,6 +71,12 @@ impl Component for MainModel {
                 WindowEvent::Close => MainMessage::Close,
                 WindowEvent::ThemeChanged => MainMessage::ThemeChanged,
             },
+            self.singlecore => {
+                ButtonEvent::Click => MainMessage::StartSingleCore,
+            },
+            self.multicore => {
+                ButtonEvent::Click => MainMessage::StartMultiCore,
+            }
         }
     }
 
@@ -79,12 +101,31 @@ impl Component for MainModel {
                 // need not to call `render`
                 Ok(false)
             }
+            MainMessage::StartSingleCore => Ok(false),
+            MainMessage::StartMultiCore => Ok(false),
         }
     }
 
     fn render(&mut self, _sender: &ComponentSender<Self>) -> Result<()> {
         let csize = self.window.client_size()?;
 
+        let mut buttons = layout! {
+            StackPanel::new(Orient::Horizontal),
+            self.singlecore => {
+                grow: true,
+                margin: Margin::new_all_same(5.),
+            },
+            self.multicore => {
+                grow: true,
+                margin: Margin::new(5., 5., 5., 0.),
+            },
+        };
+        let mut layout = layout! {
+            StackPanel::new(Orient::Vertical),
+            buttons,
+        };
+
+        layout.set_size(csize)?;
         Ok(())
     }
 
