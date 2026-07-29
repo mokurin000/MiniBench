@@ -14,7 +14,7 @@ use gdt_cpus::pin_thread_to_core;
 use gdt_cpus::{CpuInfo, Lp};
 use sha2::Digest;
 
-static LOGICAL_CORES: LazyLock<Vec<Lp>> =
+pub static LOGICAL_CORES: LazyLock<Vec<Lp>> =
     LazyLock::new(|| CpuInfo::detect().expect("Failed to detect CPU info").lps);
 static BEST_CORE: LazyLock<Lp> = LazyLock::new(|| {
     let lp = LOGICAL_CORES
@@ -24,7 +24,7 @@ static BEST_CORE: LazyLock<Lp> = LazyLock::new(|| {
     lp.clone()
 });
 
-const CHUNK_SIZE: usize = 32 * 1024; // 32 KiB
+const CHUNK_SIZE: usize = 16 * 1024; // 16 KiB
 
 /// Runs SHA-256 hashing until the specified duration has elapsed.
 ///
@@ -54,17 +54,16 @@ pub fn sha256_workload(dur: Duration) -> usize {
 
 /// Pin the current thread to the most performant logical processor.
 pub fn pin_to_best_core() -> color_eyre::Result<()> {
-    let rust_tid = thread::current().id();
+    pin_to_core(BEST_CORE.os_id as _)?;
+    Ok(())
+}
 
-    info!("Boosting {rust_tid:?} to CPU {}", BEST_CORE.os_id);
+/// Pin the current thread to the selected logical processor.
+pub fn pin_to_core(os_id: u16) -> color_eyre::Result<()> {
+    let rust_tid = thread::current().id().as_u64();
 
-    #[cfg(any(
-        target_os = "windows",
-        target_os = "linux",
-        target_os = "android",
-        // macos: not available
-    ))]
-    pin_thread_to_core(BEST_CORE.os_id as _)?;
+    info!("Pinning Thread 0x{rust_tid:04x} to CPU {}", os_id);
+    pin_thread_to_core(os_id as _)?;
 
     Ok(())
 }

@@ -7,7 +7,7 @@ use compio_log::warn;
 use winio::prelude::*;
 
 use crate::Result;
-use crate::utils::{pin_to_best_core, sha256_workload};
+use crate::utils::{LOGICAL_CORES, pin_to_best_core, pin_to_core, sha256_workload};
 
 /// Root component of the application UI.
 pub struct MainModel {
@@ -35,8 +35,14 @@ pub enum MainMessage {
         mibs: usize,
         secs: usize,
     },
+
     /// Multi-cores test
     MultiStart,
+    /// Complete multi-cores test
+    MultiComplete {
+        mibs: usize,
+        secs: usize,
+    },
 
     StartTimer(Duration),
     ProgressIncrease,
@@ -127,8 +133,7 @@ impl Component for MainModel {
                 Ok(false)
             }
             MainMessage::SingleStart => {
-                self.singlecore.disable()?;
-                self.multicore.disable()?;
+                self.toggle_buttons(false)?;
 
                 compio::runtime::spawn_blocking({
                     let sender = sender.clone();
@@ -138,7 +143,7 @@ impl Component for MainModel {
                             warn!("Failed to pin thread affinity: {e}");
                         }
 
-                        let secs = 10;
+                        let secs = 30;
                         let dur = Duration::from_secs(secs as u64);
 
                         sender.post(MainMessage::StartTimer(dur));
@@ -152,17 +157,56 @@ impl Component for MainModel {
                 Ok(false)
             }
             MainMessage::SingleComplete { mibs, secs } => {
-                self.singlecore.enable()?;
-                self.multicore.enable()?;
+                self.toggle_buttons(true)?;
 
                 let speed = mibs as f64 / secs as f64;
                 self.append_message(format_args!("Single-Thread: {speed:.02} MiB/s"))?;
 
                 Ok(true)
             }
+
             MainMessage::MultiStart => {
-                self.append_message(format_args!("Multi-Thread unsupported yet."))?;
+                self.toggle_buttons(false)?;
+
+                compio::runtime::spawn_blocking({
+                    let sender = sender.clone();
+
+                    let secs = 30;
+                    let dur = Duration::from_secs(secs as u64);
+
+                    sender.post(MainMessage::StartTimer(dur));
+
+                    move || {
+                        let mut handles = vec![];
+                        for lp in &*LOGICAL_CORES {
+                            let os_id = lp.os_id;
+                            handles.push(std::thread::spawn(move || {
+                                if let Err(e) = pin_to_core(os_id) {
+                                    warn!("Failed to pin thread to CPU {os_id}: {e}");
+                                }
+                                sha256_workload(dur)
+                            }));
+                        }
+
+                        let mibs = handles
+                            .into_iter()
+                            .map(|handle| handle.join().expect("Thread error"))
+                            .sum::<usize>();
+
+                        sender.post(MainMessage::MultiComplete { mibs, secs });
+                    }
+                })
+                .detach();
+
                 Ok(false)
+            }
+            MainMessage::MultiComplete { mibs, secs } => {
+                self.toggle_buttons(true)?;
+
+                let speed = mibs as f64 / secs as f64;
+                self.append_message(format_args!("Multi-Thread: {speed:.02} MiB/s"))?;
+
+                Ok(true)
             }
 
             MainMessage::StartTimer(dur) => {
@@ -234,5 +278,12 @@ impl MainModel {
             }
         })
         .detach();
+    }
+
+    fn toggle_buttons(&mut self, enabled: bool) -> Result<()> {
+        self.singlecore.set_enabled(enabled)?;
+        self.multicore.set_enabled(enabled)?;
+
+        Ok(())
     }
 }

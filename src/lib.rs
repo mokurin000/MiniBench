@@ -1,5 +1,5 @@
 //! Root module of the app.
-#![feature(random)]
+#![feature(random, thread_id_value)]
 
 pub mod model;
 pub mod utils;
