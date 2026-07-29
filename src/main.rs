@@ -14,6 +14,7 @@ fn main() -> Result<()> {
     use main::model::MainModel;
 
     tracing_subscriber::fmt()
+        .with_ansi(true)
         .with_env_filter(EnvFilter::from_default_env())
         .init();
 

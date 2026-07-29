@@ -16,6 +16,7 @@ pub struct MainModel {
     singlecore: Child<Button>,
     multicore: Child<Button>,
     textbox: Child<TextBox>,
+    progress: Child<Progress>,
 }
 
 pub enum MainMessage {
@@ -30,9 +31,15 @@ pub enum MainMessage {
     /// Start single-core test
     SingleStart,
     /// Complete single-core test
-    SingleComplete { mibs: usize, secs: usize },
+    SingleComplete {
+        mibs: usize,
+        secs: usize,
+    },
     /// Multi-cores test
     MultiStart,
+
+    StartTimer(Duration),
+    ProgressIncrease,
 }
 
 impl Component for MainModel {
@@ -62,6 +69,10 @@ impl Component for MainModel {
             textbox: TextBox = (&window) => {
                 text: "Waiting for further command...\n",
                 readonly: true,
+            },
+            progress: Progress = (&window) => {
+                minimum: 0,
+                maximum: 100,
             }
         }
 
@@ -72,6 +83,7 @@ impl Component for MainModel {
             singlecore,
             multicore,
             textbox,
+            progress,
         })
     }
 
@@ -127,7 +139,10 @@ impl Component for MainModel {
                         }
 
                         let secs = 10;
-                        let mibs = sha256_workload(Duration::from_secs(secs as u64));
+                        let dur = Duration::from_secs(secs as u64);
+
+                        sender.post(MainMessage::StartTimer(dur));
+                        let mibs = sha256_workload(dur);
 
                         sender.post(MainMessage::SingleComplete { mibs, secs });
                     }
@@ -147,6 +162,17 @@ impl Component for MainModel {
             }
             MainMessage::MultiStart => {
                 self.append_message(format_args!("Multi-Thread unsupported yet."))?;
+                Ok(false)
+            }
+
+            MainMessage::StartTimer(dur) => {
+                self.progress.set_pos(0)?;
+                self.start_timer(sender.clone(), dur);
+                Ok(false)
+            }
+            MainMessage::ProgressIncrease => {
+                let new = self.progress.pos()? + 1;
+                self.progress.set_pos(new)?;
                 Ok(false)
             }
         }
@@ -169,6 +195,9 @@ impl Component for MainModel {
         let mut layout = layout! {
             StackPanel::new(Orient::Vertical),
             buttons,
+            self.progress => {
+                margin: Margin::new_all_same(5.),
+            },
             self.textbox => {
                 grow: true,
                 margin: Margin::new_all_same(10.),
@@ -192,5 +221,18 @@ impl MainModel {
         self.textbox.set_text(text)?;
 
         Ok(())
+    }
+
+    fn start_timer(&self, sender: ComponentSender<Self>, duration: Duration) {
+        let ms_per_interval = duration.as_millis() as u64 / 100;
+        let dur = Duration::from_millis(ms_per_interval);
+
+        compio::runtime::spawn_blocking(move || {
+            for _ in 0..100 {
+                std::thread::sleep(dur);
+                sender.post(MainMessage::ProgressIncrease);
+            }
+        })
+        .detach();
     }
 }
