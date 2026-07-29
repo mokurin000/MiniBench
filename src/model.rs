@@ -4,6 +4,7 @@ use std::fmt::{self, Write};
 use std::time::Duration;
 
 use compio_log::warn;
+use sysinfo::{CpuRefreshKind, System};
 use winio::prelude::*;
 
 use crate::Result;
@@ -59,6 +60,15 @@ impl Component for MainModel {
         // Note: color-eyre does not enable VT100 on Windows on its own
         color_eyre::install()?;
 
+        let mut sys_info = System::new();
+        sys_info.refresh_cpu_list(CpuRefreshKind::nothing());
+
+        let cpus = sys_info.cpus();
+        let vendor = cpus[0].vendor_id();
+        let brand = cpus[0].brand();
+        let cores = cpus.len();
+        let cpu_line = format!("CPU: {brand} ({vendor}), {cores} cores\n");
+
         init! {
             window: Window = (()) => {
                 text: "MiniBench",
@@ -83,6 +93,7 @@ impl Component for MainModel {
                 maximum: 100,
             },
             textbox: TextBox = (&window) => {
+                text: cpu_line,
                 readonly: true,
             },
 
