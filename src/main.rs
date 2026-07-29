@@ -4,6 +4,9 @@
 
 use main::Result;
 
+#[cfg(windows)]
+mod windows;
+
 /// Desktop entry point (Windows / Linux / macOS).
 #[cfg(not(target_os = "android"))]
 fn main() -> Result<()> {
@@ -12,6 +15,9 @@ fn main() -> Result<()> {
 
     use main::APP_ID;
     use main::model::MainModel;
+
+    #[cfg(windows)]
+    windows::try_attach_console()?;
 
     tracing_subscriber::fmt()
         .with_ansi(true)
