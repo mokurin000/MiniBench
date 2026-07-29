@@ -830,7 +830,7 @@ dependencies = [
 [[package]]
 name = "gdt-cpus"
 version = "0.2606.1"
-source = "git+https://github.com/mokurin000/gdt-cpus-rs?branch=feat%2Fsupport-android#5e3d2f9df9556e20a69b717de7acfac060484ba8"
+source = "git+https://github.com/mokurin000/gdt-cpus-rs?branch=feat%2Fsupport-android#e038b1308e9e14f52225558057f326bc21e68587"
 dependencies = [
  "bitflags",
  "libc",
