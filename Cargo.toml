@@ -6,7 +6,7 @@ edition = "2024"
 # See https://github.com/burtonageo/cargo-bundle/tree/master#general-settings
 # Useful for packaging macOS (.app), Linux (.deb), or Windows (.msi) applications.
 [package.metadata.bundle]
-identifier = "io.github.mokurin000.example"
+identifier = "io.github.mokurin000.minibench"
 
 [dependencies]
 # Error handling

@@ -10,12 +10,6 @@ pub struct MainModel {
     window: Child<Window>,
     /// label
     label: Child<Label>,
-    /// count up
-    countup: Child<Button>,
-    /// count down
-    countdown: Child<Button>,
-
-    count: i8,
 }
 
 pub enum MainMessage {
@@ -27,10 +21,6 @@ pub enum MainMessage {
     ThemeChanged,
     /// Close main window
     Close,
-    /// Count plus by one
-    CountUp,
-    /// Count minus by one
-    CountDown,
 }
 
 impl Component for MainModel {
@@ -45,33 +35,20 @@ impl Component for MainModel {
 
         init! {
             window: Window = (()) => {
-                text: "Main window",
+                text: "MiniBench",
                 size: Size::new(300.0, 100.0),
 
                 #[cfg(all(windows, feature = "winui"))]
                 backdrop: Backdrop::Mica,
             },
             label: Label = (&window) => {
-                text: "0",
-            },
-            countup: Button = (&window) => {
-                text: "+",
-            },
-            countdown: Button = (&window) => {
-                text: "-",
+                text: "Text Label",
             },
         }
 
         window.show()?;
 
-        Ok(Self {
-            window,
-            label,
-            countup,
-            countdown,
-
-            count: 0,
-        })
+        Ok(Self { window, label })
     }
 
     async fn start(&mut self, sender: &ComponentSender<Self>) -> ! {
@@ -83,18 +60,12 @@ impl Component for MainModel {
                 WindowEvent::Close => MainMessage::Close,
                 WindowEvent::ThemeChanged => MainMessage::ThemeChanged,
             },
-            self.countup => {
-                ButtonEvent::Click => MainMessage::CountUp,
-            },
-            self.countdown => {
-                ButtonEvent::Click => MainMessage::CountDown,
-            },
         }
     }
 
     async fn update_children(&mut self) -> Result<bool> {
         // update the window and functional children
-        update_children!(self.window, self.countup,)
+        update_children!(self.window,)
     }
 
     async fn update(
@@ -113,16 +84,6 @@ impl Component for MainModel {
                 // need not to call `render`
                 Ok(false)
             }
-            MainMessage::CountUp => {
-                self.count += 1;
-                self.label.set_text(format!("{}", self.count))?;
-                Ok(true)
-            }
-            MainMessage::CountDown => {
-                self.count -= 1;
-                self.label.set_text(format!("{}", self.count))?;
-                Ok(true)
-            }
         }
     }
 
@@ -131,21 +92,11 @@ impl Component for MainModel {
 
         let mut layout = layout! {
             Grid::from_str("1*,2*,1*,2*,1*", "1*")?,
-            self.countup => {
-                row: 0,
-                column: 1,
-                halign: HAlign::Center,
-            },
             self.label => {
                 row: 0,
                 column: 2,
                 halign: HAlign::Center,
                 valign: VAlign::Center,
-            },
-            self.countdown => {
-                row: 0,
-                column: 3,
-                halign: HAlign::Center,
             },
         };
         let mut layout = layout! {
