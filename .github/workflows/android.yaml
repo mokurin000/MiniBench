@@ -72,17 +72,36 @@ jobs:
           ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           EOF
 
+          mkdir -p dist
+
+          # First build — original package name
           cd android
           gradle assembleRelease
 
-      - name: 📁 Collect APK
-        run: |
-          mkdir -p dist
-          cp android/app/build/outputs/apk/release/app-${{ matrix.abi }}-release.apk dist/
-          ls -lh dist/
+          # Collect first APK
+          cp app/build/outputs/apk/release/app-${{ matrix.abi }}-release.apk ../dist/app-android-${{ matrix.abi }}.apk
 
-      - name: 📤 Upload APK
+          # Replace package name for second build
+          sed -i 's/io\.github\.mokurin000\.minibench/com.primatelabs.geekbench6/g' \
+            app/src/main/java/MainActivity.java \
+            app/proguard-rules.pro \
+            app/build.gradle
+
+          # Second build — renamed package
+          gradle clean assembleRelease
+
+          # Collect second APK
+          cp app/build/outputs/apk/release/app-${{ matrix.abi }}-release.apk ../dist/app-android-${{ matrix.abi }}-gb6.apk
+          ls -lh ../dist/
+
+      - name: 📤 Upload APK (original)
         uses: actions/upload-artifact@v7
         with:
           name: app-android-${{ matrix.abi }}
-          path: dist/
+          path: dist/app-android-${{ matrix.abi }}.apk
+
+      - name: 📤 Upload APK (Geekbench 6)
+        uses: actions/upload-artifact@v7
+        with:
+          name: app-android-${{ matrix.abi }}-gb6
+          path: dist/app-android-${{ matrix.abi }}-gb6.apk
