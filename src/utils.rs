@@ -27,7 +27,7 @@ pub fn sha256_workload(dur: Duration) -> usize {
     let mut payload = [0_u8; CHUNK_SIZE];
     SystemRng.fill_bytes(&mut payload);
 
-    let calc_times = 0x100000 / CHUNK_SIZE;
+    let calc_times = 0x400000 / CHUNK_SIZE;
     let mut mib_count = 0;
 
     let start_instant = Instant::now();
@@ -42,7 +42,7 @@ pub fn sha256_workload(dur: Duration) -> usize {
         }
         let _ = std::hint::black_box(hasher.finalize());
 
-        mib_count += 1;
+        mib_count += 4;
     }
 }
 
