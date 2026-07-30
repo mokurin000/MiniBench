@@ -22,7 +22,7 @@ static BEST_CORE: LazyLock<Lp> = LazyLock::new(|| {
 ///
 /// Returns the amount of data processed during the period in MiB.
 pub fn sha256_workload(dur: Duration) -> usize {
-    let mut payload = [0_u8; 0x400000];
+    let mut payload = vec![0_u8; 0x400000];
     SystemRng.fill_bytes(&mut payload);
 
     let mut mib_count = 0;
