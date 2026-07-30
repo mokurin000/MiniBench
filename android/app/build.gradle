@@ -17,11 +17,11 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace 'io.github.mokurin000.minibench'
+    namespace 'com.primatelabs.geekbench6'
     compileSdk 37
 
     defaultConfig {
-        applicationId "io.github.mokurin000.minibench"
+        applicationId "com.primatelabs.geekbench6"
         minSdk 24
         targetSdk 37
         versionCode 1

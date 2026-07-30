@@ -1,4 +1,4 @@
-package io.github.mokurin000.minibench;
+package com.primatelabs.geekbench6;
 
 import rs.compio.winio.Activity;
 

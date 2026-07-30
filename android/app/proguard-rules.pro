@@ -1,7 +1,7 @@
 # Alternatively, you can disable `minifyEnabled` entirely.
 
 # Your application package and Winio Activity
--keep, includedescriptorclasses class io.github.mokurin000.minibench.** { *; }
+-keep, includedescriptorclasses class com.primatelabs.geekbench6.** { *; }
 -keep, includedescriptorclasses class rs.compio.winio.Activity { *; }
 -keep, includedescriptorclasses class com.google.androidgamesdk.** { *; }
 -keep, includedescriptorclasses class androidx.activity.result.** { *; }
