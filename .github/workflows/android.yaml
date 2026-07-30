@@ -87,6 +87,9 @@ jobs:
             app/proguard-rules.pro \
             app/build.gradle
 
+          sed -i 's/MiniBench/MiniBenchG/g' \
+            app/src/main/res/values/strings.xml
+
           # Second build — renamed package
           gradle clean assembleRelease
 
