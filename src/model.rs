@@ -33,16 +33,14 @@ pub enum MainMessage {
     SingleStart,
     /// Complete single-core test
     SingleComplete {
-        mibs: usize,
-        secs: usize,
+        kib_per_sec: f64,
     },
 
     /// Multi-cores test
     MultiStart,
     /// Complete multi-cores test
     MultiComplete {
-        mibs: usize,
-        secs: usize,
+        kib_per_sec: f64,
     },
 
     StartTimer(Duration),
@@ -150,35 +148,29 @@ impl Component for MainModel {
                             warn!("Failed to pin thread affinity: {e}");
                         }
 
-                        let secs = 30;
+                        let secs = 3;
                         let dur = Duration::from_secs(secs as u64);
 
                         sender.post(MainMessage::StartTimer(dur));
-                        let mibs = sha256_workload(dur);
 
-                        sender.post(MainMessage::SingleComplete { mibs, secs });
+                        let (mibs, dur) = sha256_workload(dur);
+                        let secs = dur.as_secs_f64();
+                        let kib_per_sec = mibs as f64 / secs * 1024.0;
+
+                        sender.post(MainMessage::SingleComplete { kib_per_sec });
                     }
                 })
                 .detach();
 
                 Ok(false)
             }
-            MainMessage::SingleComplete { mibs, secs } => {
-                self.toggle_buttons(true)?;
-
-                let speed = mibs as f64 / secs as f64;
-                self.append_message(format_args!("Single-Thread: {speed:.02} MiB/s"))?;
-
-                Ok(true)
-            }
-
             MainMessage::MultiStart => {
                 self.toggle_buttons(false)?;
 
                 compio::runtime::spawn_blocking({
                     let sender = sender.clone();
 
-                    let secs = 30;
+                    let secs = 3;
                     let dur = Duration::from_secs(secs as u64);
 
                     sender.post(MainMessage::StartTimer(dur));
@@ -195,23 +187,34 @@ impl Component for MainModel {
                             }));
                         }
 
-                        let mibs = handles
+                        let kib_per_sec = handles
                             .into_iter()
                             .map(|handle| handle.join().expect("Thread error"))
-                            .sum::<usize>();
+                            .map(|(mibs, dur)| {
+                                let secs = dur.as_secs_f64();
+                                mibs as f64 / secs * 1024.0
+                            })
+                            .sum::<f64>();
 
-                        sender.post(MainMessage::MultiComplete { mibs, secs });
+                        sender.post(MainMessage::MultiComplete { kib_per_sec });
                     }
                 })
                 .detach();
 
                 Ok(false)
             }
-            MainMessage::MultiComplete { mibs, secs } => {
+
+            MainMessage::SingleComplete { kib_per_sec } => {
                 self.toggle_buttons(true)?;
 
-                let speed = mibs as f64 / secs as f64;
-                self.append_message(format_args!("Multi-Thread: {speed:.02} MiB/s"))?;
+                self.append_message(format_args!("Single-Thread: {kib_per_sec:.01} KiB/s"))?;
+
+                Ok(true)
+            }
+            MainMessage::MultiComplete { kib_per_sec } => {
+                self.toggle_buttons(true)?;
+
+                self.append_message(format_args!("Multi-Thread: {kib_per_sec:.01} KiB/s"))?;
 
                 Ok(true)
             }
