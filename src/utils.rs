@@ -44,7 +44,11 @@ pub fn sha256_workload(dur: Duration) -> (usize, Duration) {
 }
 
 /// Pin the current thread to the most performant logical processor.
+///
+/// On Linux, this is ignored because BEST_CORE becomes unreliable.
+/// See https://github.com/gdt-tools/gdt-cpus-rs/issues/15
 pub fn pin_to_best_core() -> color_eyre::Result<()> {
+    #[cfg(not(target_os = "linux"))]
     pin_to_core(BEST_CORE.os_id as _)?;
     Ok(())
 }
