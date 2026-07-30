@@ -18,16 +18,13 @@ static BEST_CORE: LazyLock<Lp> = LazyLock::new(|| {
     lp.clone()
 });
 
-const CHUNK_SIZE: usize = 16 * 1024; // 16 KiB
-
 /// Runs SHA-256 hashing until the specified duration has elapsed.
 ///
 /// Returns the amount of data processed during the period in MiB.
 pub fn sha256_workload(dur: Duration) -> usize {
-    let mut payload = [0_u8; CHUNK_SIZE];
+    let mut payload = [0_u8; 0x400000];
     SystemRng.fill_bytes(&mut payload);
 
-    let calc_times = 0x400000 / CHUNK_SIZE;
     let mut mib_count = 0;
 
     let start_instant = Instant::now();
@@ -37,9 +34,7 @@ pub fn sha256_workload(dur: Duration) -> usize {
         }
 
         let mut hasher = sha2::Sha256::new();
-        for _ in 0..calc_times {
-            hasher.update(&payload);
-        }
+        hasher.update(&payload);
         let _ = std::hint::black_box(hasher.finalize());
 
         mib_count += 4;
