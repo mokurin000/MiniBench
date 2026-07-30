@@ -13,7 +13,6 @@ use crate::utils::{LOGICAL_CORES, pin_to_best_core, pin_to_core, sha256_workload
 pub struct MainModel {
     /// The main application window.
     window: Child<Window>,
-    label: Child<Label>,
     singlecore: Child<Button>,
     multicore: Child<Button>,
     textbox: Child<TextBox>,
@@ -66,14 +65,11 @@ impl Component for MainModel {
                 backdrop: Backdrop::Mica,
             },
 
-            label: Label = (&window) => {
+            singlecore: Button = (&window) => {
                 text: "SHA-256",
             },
-            singlecore: Button = (&window) => {
-                text: "Single-Thread",
-            },
             multicore: Button = (&window) => {
-                text: "Multi-Thread",
+                text: "SHA-256 MT",
             },
 
             progress: Progress = (&window) => {
@@ -90,7 +86,6 @@ impl Component for MainModel {
 
         Ok(Self {
             window,
-            label,
             singlecore,
             multicore,
             textbox,
@@ -207,14 +202,14 @@ impl Component for MainModel {
             MainMessage::SingleComplete { kib_per_sec } => {
                 self.toggle_buttons(true)?;
 
-                self.append_message(format_args!("Single-Thread: {kib_per_sec:.01} KiB/s"))?;
+                self.append_message(format_args!("SHA-256: {kib_per_sec:.01} KiB/s"))?;
 
                 Ok(true)
             }
             MainMessage::MultiComplete { kib_per_sec } => {
                 self.toggle_buttons(true)?;
 
-                self.append_message(format_args!("Multi-Thread: {kib_per_sec:.01} KiB/s"))?;
+                self.append_message(format_args!("SHA-256 MT: {kib_per_sec:.01} KiB/s"))?;
 
                 Ok(true)
             }
@@ -248,9 +243,6 @@ impl Component for MainModel {
         };
         let mut layout = layout! {
             StackPanel::new(Orient::Vertical),
-            self.label => {
-                halign: HAlign::Center,
-            },
             buttons,
             self.progress => {
                 margin: Margin::new_all_same(5.),

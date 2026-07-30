@@ -1,6 +1,6 @@
 # MiniBench
 
-A lightweight cross-platform benchmarking tool for phones and computers, featuring real-world and theoretical workloads.
+A lightweight cross-platform benchmarking tool for phones and computers, featuring on SoC theorical performance.
 
 ## Supported Platforms
 
