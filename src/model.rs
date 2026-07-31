@@ -7,7 +7,8 @@ use compio_log::warn;
 use winio::prelude::*;
 
 use crate::Result;
-use crate::utils::{LOGICAL_CORES, pin_to_best_core, pin_to_core, sha256_workload};
+use crate::utils::{LOGICAL_CORES, pin_to_best_core, pin_to_core};
+use crate::workload::sha256_workload;
 
 /// Root component of the application UI.
 pub struct MainModel {
