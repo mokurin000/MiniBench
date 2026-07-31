@@ -202,14 +202,16 @@ impl Component for MainModel {
             MainMessage::SingleComplete { kib_per_sec } => {
                 self.toggle_buttons(true)?;
 
-                self.append_message(format_args!("SHA-256: {kib_per_sec:.01} KiB/s"))?;
+                let mb_per_sec = kib_per_sec * 1024.0 / 1_000_000;
+                self.append_message(format_args!("SHA-256: {mb_per_sec:.01} MB/s"))?;
 
                 Ok(true)
             }
             MainMessage::MultiComplete { kib_per_sec } => {
                 self.toggle_buttons(true)?;
 
-                self.append_message(format_args!("SHA-256 MT: {kib_per_sec:.01} KiB/s"))?;
+                let mb_per_sec = kib_per_sec * 1024.0 / 1_000_000;
+                self.append_message(format_args!("[MT] SHA-256: {mb_per_sec:.01} MB/s"))?;
 
                 Ok(true)
             }
