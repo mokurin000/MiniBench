@@ -16,6 +16,7 @@ pub struct MainModel {
     window: Child<Window>,
     singlecore: Child<Button>,
     multicore: Child<Button>,
+    pikafish: Child<Button>,
     textbox: Child<TextBox>,
     progress: Child<Progress>,
 }
@@ -41,6 +42,12 @@ pub enum MainMessage {
     /// Complete multi-cores test
     MultiComplete {
         kib_per_sec: f64,
+    },
+
+    /// Pikafish benchmark
+    PikaStart,
+    PikaComplete {
+        nodes_per_sec: u32,
     },
 
     StartTimer(Duration),
@@ -73,6 +80,10 @@ impl Component for MainModel {
                 text: "SHA-256 MT",
             },
 
+            pikafish: Button = (&window) => {
+                text: "Pikafish",
+            },
+
             progress: Progress = (&window) => {
                 minimum: 0,
                 maximum: 100,
@@ -89,6 +100,7 @@ impl Component for MainModel {
             window,
             singlecore,
             multicore,
+            pikafish,
             textbox,
             progress,
         })
@@ -108,6 +120,9 @@ impl Component for MainModel {
             },
             self.multicore => {
                 ButtonEvent::Click => MainMessage::MultiStart,
+            },
+            self.pikafish => {
+                ButtonEvent::Click => MainMessage::PikaStart,
             }
         }
     }
@@ -200,6 +215,101 @@ impl Component for MainModel {
                 Ok(false)
             }
 
+            MainMessage::PikaStart => {
+                self.toggle_buttons(false)?;
+
+                self.progress.set_pos(0)?;
+                self.progress.set_maximum(49)?;
+                compio::runtime::spawn_blocking({
+                    let sender = sender.clone();
+                    move || {
+                        #[cfg(all(target_os = "android", target_arch = "aarch64"))]
+                        {
+                            use std::io::{BufRead, BufReader};
+                            use std::path::PathBuf;
+                            use std::process::Stdio;
+                            use std::sync::Once;
+
+                            static RELEASED_FILES: Once = Once::new();
+
+                            extern "C" {
+                                fn getuid() -> u32;
+                            }
+                            let files = PathBuf::from(format!(
+                                "/data/user/{}/io.github.mokurin000.minibench/files",
+                                unsafe { getuid() / 100000 }
+                            ));
+                            let pikafish_exec = files.join("pikafish");
+                            let pikafish_nnue = files.join("pikafish.nnue");
+
+                            RELEASED_FILES.call_once(|| {
+                                let pikafish =
+                                    include_bytes!(concat!(env!("OUT_DIR"), "/pikafish"));
+                                let pikafish_nnue_data =
+                                    include_bytes!(concat!(env!("OUT_DIR"), "/pikafish.nnue"));
+
+                                std::fs::write(pikafish_exec, pikafish)?;
+                                std::fs::write(pikafish_nnue, pikafish_nnue_data)?;
+                            });
+
+                            let mut child = std::process::Command::new(pikafish_exec)
+                                .arg("bench")
+                                .current_dir(files)
+                                .stdin(Stdio::null())
+                                .stdout(Stdio::null())
+                                .stderr(Stdio::piped())
+                                .spawn()?;
+                            let Some(stderr) = child.stderr.take() else {
+                                error!("Failed to take stderr");
+                                return;
+                            };
+
+                            let reader = BufReader::new(stderr);
+                            for line in reader.lines() {
+                                let Ok(line) = line else { break };
+                                let line = line.trim();
+                                match line {
+                                    _ if line.starts_with("Position: ") => {
+                                        sender.post(MainMessage::ProgressIncrease);
+                                    }
+                                    _ if line.starts_with("Nodes/second") => {
+                                        if let Some(num) = line.split_whitespace().last() {
+                                            if let Ok(nodes_per_sec) = num.parse() {
+                                                sender.post(MainMessage::PikaComplete {
+                                                    nodes_per_sec,
+                                                });
+                                            }
+                                        } else {
+                                            error!("Failed to capture measured NPS!");
+                                            sender.post(MainMessage::PikaComplete {
+                                                nodes_per_sec: 0,
+                                            });
+                                        }
+                                    }
+                                    _ => (),
+                                }
+                            }
+                        }
+                        #[cfg(not(all(target_os = "android", target_arch = "aarch64")))]
+                        {
+                            sender.post(MainMessage::PikaComplete { nodes_per_sec: 0 });
+                        }
+                    }
+                })
+                .detach();
+
+                Ok(false)
+            }
+            MainMessage::PikaComplete { nodes_per_sec } => {
+                self.toggle_buttons(true)?;
+                if nodes_per_sec == 0 {
+                    self.append_message(format_args!("[Pika] Unsupported"))?;
+                } else {
+                    self.append_message(format_args!("[Pika] {nodes_per_sec} Nodes/sec"))?;
+                }
+                Ok(true)
+            }
+
             MainMessage::SingleComplete { kib_per_sec } => {
                 self.toggle_buttons(true)?;
 
@@ -247,6 +357,9 @@ impl Component for MainModel {
         let mut layout = layout! {
             StackPanel::new(Orient::Vertical),
             buttons,
+            self.pikafish => {
+                margin: Margin::new_all_same(5.),
+            },
             self.progress => {
                 margin: Margin::new_all_same(5.),
             },
@@ -291,6 +404,7 @@ impl MainModel {
     fn toggle_buttons(&mut self, enabled: bool) -> Result<()> {
         self.singlecore.set_enabled(enabled)?;
         self.multicore.set_enabled(enabled)?;
+        self.pikafish.set_enabled(enabled)?;
 
         Ok(())
     }

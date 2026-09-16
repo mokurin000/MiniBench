@@ -25,6 +25,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
+        with:
+          lfs: true
 
       - name: ☕️ Setup Java (Temurin 17)
         uses: actions/setup-java@v5

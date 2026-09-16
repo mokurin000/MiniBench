@@ -1,0 +1,2 @@
+pikafish/pikafish-android-arm64 filter=lfs diff=lfs merge=lfs -text
+pikafish/pikafish.nnue filter=lfs diff=lfs merge=lfs -text
