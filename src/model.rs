@@ -230,9 +230,11 @@ impl Component for MainModel {
                             use std::process::Stdio;
                             use std::sync::Once;
 
+                            use compio_log::error;
+
                             static RELEASED_FILES: Once = Once::new();
 
-                            extern "C" {
+                            unsafe extern "C" {
                                 fn getuid() -> u32;
                             }
                             let files = PathBuf::from(format!(
@@ -248,8 +250,8 @@ impl Component for MainModel {
                                 let pikafish_nnue_data =
                                     include_bytes!(concat!(env!("OUT_DIR"), "/pikafish.nnue"));
 
-                                std::fs::write(pikafish_exec, pikafish)?;
-                                std::fs::write(pikafish_nnue, pikafish_nnue_data)?;
+                                _ = std::fs::write(pikafish_exec, pikafish);
+                                _ = std::fs::write(pikafish_nnue, pikafish_nnue_data);
                             });
 
                             let mut child = std::process::Command::new(pikafish_exec)
