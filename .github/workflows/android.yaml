@@ -87,7 +87,8 @@ jobs:
           sed -i 's/io\.github\.mokurin000\.minibench/com.primatelabs.geekbench6/g' \
             app/src/main/java/MainActivity.java \
             app/proguard-rules.pro \
-            app/build.gradle
+            app/build.gradle \
+            ../src/model.rs
 
           sed -i 's/MiniBench/MiniBenchG/g' \
             app/src/main/res/values/strings.xml
